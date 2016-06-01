@@ -1,0 +1,5 @@
+{
+	"ImportPath": "github.com/victorfong/twitter-auto",
+	"GoVersion": "go1.5.1",
+	"Deps": []
+}
