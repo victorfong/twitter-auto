@@ -3,6 +3,7 @@ import (
   . "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
   "os"
+  "log"
 )
 
 var _ = Describe("Unit", func(){
@@ -48,21 +49,61 @@ var _ = Describe("Unit", func(){
 
 var _ = Describe("Integration", func(){
   Context("when database connection is valid", func(){
-    PIt("creates a database connection", func(){
-      uri := "mysql2://twitter-auto2:twitter-auto2@localhost:3306/twitter-auto2?reconnect=true"
-      db, err := initConnection(uri)
+    BeforeEach(func() {
+      envVar := `{
+        "cleardb": [
+          {
+            "credentials": {
+              "uri": "mysql://twitter-auto2:twitter-auto2@localhost:3306/twitter-auto2?reconnect=true"
+            }
+          }
+        ]
+      }`
+      os.Setenv("VCAP_SERVICES", string(envVar))
+    })
+
+    var db DatabaseConnection
+    It("creates a database connection", func(){
+      db = DatabaseConnection{}
+      err := db.Init()
       Expect(err).To(BeNil())
-      Expect(db).ToNot(BeNil())
+    })
+
+    It("can insert a new follower", func() {
+      db = DatabaseConnection{}
+      err := db.Init()
+      Expect(err).To(BeNil())
+
+      var follower Follower = Follower{ TwitterId: 153 }
+      log.Printf("follower.TwitterId = %d", follower.TwitterId)
+      err = db.InsertFollower(&follower)
+      Expect(err).To(BeNil())
     })
   })
 
   Context("when database connection is invalid", func(){
+    BeforeEach(func() {
+      envVar := `{
+        "cleardb": [
+          {
+            "credentials": {
+              "uri": "mysql://whatever:lalala@localhost:3306/whatever?reconnect=true"
+            }
+          }
+        ]
+      }`
+      os.Setenv("VCAP_SERVICES", string(envVar))
+    })
+
     It("returns an error", func(){
-      uri := "mysql://whatever:lalala@localhost:3306/whatever?reconnect=true"
-      _, err := initConnection(uri)
+      db := DatabaseConnection{}
+      err := db.Init()
+
       Expect(err).ToNot(BeNil())
     })
   })
+
+
 
 
 })
