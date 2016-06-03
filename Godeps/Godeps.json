@@ -3,9 +3,23 @@
 	"GoVersion": "go1.5.1",
 	"Deps": [
 		{
+			"ImportPath": "github.com/coopernurse/gorp",
+			"Comment": "v1.7-1-g236e138",
+			"Rev": "236e1383df4c6b402e251d3fe2dcea50dab1faf1"
+		},
+		{
 			"ImportPath": "github.com/go-sql-driver/mysql",
 			"Comment": "v1.2-196-g3654d25",
 			"Rev": "3654d25ec346ee8ce71a68431025458d52a38ac0"
+		},
+		{
+			"ImportPath": "github.com/rubenv/sql-migrate",
+			"Rev": "51aa4cacd5b4e5793f3713fcbc2c12d2fb8cc4ec"
+		},
+		{
+			"ImportPath": "gopkg.in/gorp.v1",
+			"Comment": "v1.7.1",
+			"Rev": "c87af80f3cc5036b55b83d77171e156791085e2e"
 		}
 	]
 }
