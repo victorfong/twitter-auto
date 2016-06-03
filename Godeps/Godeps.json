@@ -3,28 +3,9 @@
 	"GoVersion": "go1.5.1",
 	"Deps": [
 		{
-			"ImportPath": "github.com/ChimeraCoder/anaconda",
-			"Rev": "91bfbf5de08def2e8b5480b52cae811d2bde3af9"
-		},
-		{
-			"ImportPath": "github.com/ChimeraCoder/tokenbucket",
-			"Rev": "c5a927568de7aad8a58127d80bcd36ca4e71e454"
-		},
-		{
-			"ImportPath": "github.com/azr/backoff",
-			"Rev": "53511d3c733003985b0b76f733df1f4d0095ee6a"
-		},
-		{
-			"ImportPath": "github.com/dustin/go-jsonpointer",
-			"Rev": "2efc9fef1d9421a8d252a32e20beb10cecd2bbca"
-		},
-		{
-			"ImportPath": "github.com/dustin/gojson",
-			"Rev": "2e71ec9dd5adce3b168cd0dbde03b5cc04951c30"
-		},
-		{
-			"ImportPath": "github.com/garyburd/go-oauth/oauth",
-			"Rev": "719b069913e1151a73ea30d2ea4f90deda3ce234"
+			"ImportPath": "github.com/go-sql-driver/mysql",
+			"Comment": "v1.2-196-g3654d25",
+			"Rev": "3654d25ec346ee8ce71a68431025458d52a38ac0"
 		}
 	]
 }
