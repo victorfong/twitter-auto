@@ -4,6 +4,7 @@ import (
   "github.com/victorfong/twitter-auto/social"
   "github.com/victorfong/twitter-auto/model"
   "time"
+  "log"
 )
 
 type DatabaseSyncWorker struct {
@@ -13,25 +14,52 @@ type DatabaseSyncWorker struct {
 }
 
 func (w *DatabaseSyncWorker) Start() {
-  go w.syncFollowings()
+
+  for true {
+    go w.syncFollowings()
+    go w.syncFollowers()
+    time.Sleep(w.SleepTime)
+  }
+
 }
 
 func (w *DatabaseSyncWorker) syncFollowings() error{
-  // ids, err := w.Twitter.GetSelfFriendIds()
-  // if err != nil {
-  //   return err
-  // }
-  //
-  //
+  log.Print("Running Sync Following")
+  ids, err := w.Twitter.GetSelfFriendIds()
+  if err != nil {
+    log.Printf("Found error while sync'ing following: %v", err)
+    return err
+  }
+
+  log.Printf("Found %d following", len(ids))
+
+  err = w.Database.SyncFollowings(ids)
+
+  if err != nil {
+    log.Printf("Found error while sync'ing following: %v", err)
+    return err
+  }
+
+  log.Print("Finished Running Sync Following")
   return nil
 }
 
 func (w *DatabaseSyncWorker) syncFollowers() error {
+  log.Print("Running Sync Followers")
+
   ids, err := w.Twitter.GetSelfFollowerIds()
   if err != nil {
+    log.Printf("Found error while sync'ing follower: %v", err)
     return err
   }
 
+  log.Printf("Found %d followers", len(ids))
   err = w.Database.SyncFollowers(ids)
-  return err
+  if err != nil {
+    log.Printf("Found error while sync'ing follower: %v", err)
+    return err
+  }
+
+  log.Print("Finished Running Sync Followers")
+  return nil
 }

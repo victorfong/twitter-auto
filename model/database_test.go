@@ -66,13 +66,13 @@ var _ = Describe("Integration", func(){
     var db DatabaseConnection
     It("creates a database connection", func(){
       db = DatabaseConnection{}
-      err := db.Init()
+      err := InitDatabase(&db)
       Expect(err).To(BeNil())
     })
 
     It("can insert a new follower", func() {
       db = DatabaseConnection{}
-      err := db.Init()
+      err := InitDatabase(&db)
       Expect(err).To(BeNil())
 
       var follower Follower = Follower{ TwitterId: 153 }
@@ -83,7 +83,7 @@ var _ = Describe("Integration", func(){
 
     It("can sync followings", func(){
       db = DatabaseConnection{}
-      err := db.Init()
+      err := InitDatabase(&db)
       Expect(err).To(BeNil())
 
       r := rand.New(rand.NewSource(99))
@@ -103,7 +103,7 @@ var _ = Describe("Integration", func(){
 
     It("can find new no longer followings", func() {
       db = DatabaseConnection{}
-      err := db.Init()
+      err := InitDatabase(&db)
       Expect(err).To(BeNil())
 
       r := rand.New(rand.NewSource(99))
@@ -137,7 +137,7 @@ var _ = Describe("Integration", func(){
 
     It("can find new following", func() {
       db = DatabaseConnection{}
-      err := db.Init()
+      err := InitDatabase(&db)
       Expect(err).To(BeNil())
 
       r := rand.New(rand.NewSource(99))
@@ -169,7 +169,7 @@ var _ = Describe("Integration", func(){
 
     It("can insert new temp followings", func() {
       db = DatabaseConnection{}
-      err := db.Init()
+      err := InitDatabase(&db)
       Expect(err).To(BeNil())
 
       r := rand.New(rand.NewSource(99))
@@ -186,7 +186,7 @@ var _ = Describe("Integration", func(){
 
     It("can sync followers", func(){
       db = DatabaseConnection{}
-      err := db.Init()
+      err := InitDatabase(&db)
       Expect(err).To(BeNil())
 
       r := rand.New(rand.NewSource(99))
@@ -219,7 +219,7 @@ var _ = Describe("Integration", func(){
 
     It("returns an error", func(){
       db := DatabaseConnection{}
-      err := db.Init()
+      err := InitDatabase(&db)
 
       Expect(err).ToNot(BeNil())
     })

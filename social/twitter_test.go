@@ -9,8 +9,7 @@ var _ = Describe("Integration", func(){
     var twitter TwitterConnection
 
     BeforeEach(func() {
-      twitter = TwitterConnection{}
-      twitter.Init()
+      twitter = NewTwitter()
     })
 
     It("establishes an API after Init", func(){

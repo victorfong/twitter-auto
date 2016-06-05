@@ -9,8 +9,6 @@ import (
 )
 
 type Twitter interface {
-  Init()
-
   GetSelfFriendIds() ([]int64, error)
   GetFriendIds(userId int64) ([]int64, error)
 
@@ -22,12 +20,17 @@ type TwitterConnection struct {
   api *anaconda.TwitterApi
 }
 
-func (t *TwitterConnection) Init() {
+func NewTwitter() TwitterConnection {
+
+  t := TwitterConnection{}
+
   log.Printf("Initializing Anaconda endpoint")
 	anaconda.SetConsumerKey(os.Getenv("TWITTER_CONSUMER_KEY"))
 	anaconda.SetConsumerSecret(os.Getenv("TWITTER_CONSUMER_SECRET"))
 	t.api = anaconda.NewTwitterApi(os.Getenv("TWITTER_TOKEN"), os.Getenv("TWITTER_TOKEN_SECRET"))
 	log.Printf("Finished Initializing")
+
+  return t
 }
 
 func (t TwitterConnection) GetSelfFriendIds() ([]int64, error) {

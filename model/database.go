@@ -19,14 +19,10 @@ type MySql struct {
 }
 
 type Database interface{
-  Init()
-  Exec(strStatement string) (sql.Result, error)
-
-  InsertFollower(follower Follower) error
+  // InsertFollower(follower Follower) error
 
   SyncFollowers(ids []int64) error
   SyncFollowings(id []int64) error
-
 }
 
 type DatabaseConnection struct{
@@ -34,7 +30,7 @@ type DatabaseConnection struct{
   dbMap *gorp.DbMap
 }
 
-func (d *DatabaseConnection) Init() error{
+func InitDatabase(d *DatabaseConnection) error{
   log.Println("Initializing Database")
 
   uri, err := getURI()
@@ -58,7 +54,7 @@ func (d *DatabaseConnection) Init() error{
   return nil
 }
 
-func (d *DatabaseConnection) SyncFollowers(ids []int64) error {
+func (d DatabaseConnection) SyncFollowers(ids []int64) error {
   tx, err := d.db.Begin()
   if err != nil {
     return err
@@ -82,8 +78,13 @@ func (d *DatabaseConnection) SyncFollowers(ids []int64) error {
   return nil
 }
 
-func (d *DatabaseConnection) SyncFollowings(ids []int64) error {
-  err := d.insertTempFollowings(ids)
+func (d DatabaseConnection) SyncFollowings(ids []int64) error {
+  err := d.clearTempFollowings()
+  if err != nil {
+    return err
+  }
+
+  err = d.insertTempFollowings(ids)
   if err != nil {
     return err
   }
@@ -113,7 +114,7 @@ func (d *DatabaseConnection) SyncFollowings(ids []int64) error {
   return err
 }
 
-func (d *DatabaseConnection) unfollow(ids []int64) error {
+func (d DatabaseConnection) unfollow(ids []int64) error {
 
   if len(ids) > 0 {
     sqlStr := "UPDATE following SET unfollowed = true WHERE twitter_id IN ("
@@ -143,8 +144,11 @@ func (d *DatabaseConnection) unfollow(ids []int64) error {
   return nil
 }
 
-func (d *DatabaseConnection) getNoLongerFollowings() ([]int64, error) {
+func (d DatabaseConnection) getNoLongerFollowings() ([]int64, error) {
   sqlStr := "SELECT twitter_id FROM following WHERE twitter_id NOT IN (SELECT twitter_id from temp_following) AND unfollowed = false ORDER BY since"
+
+  log.Printf("sqlStr = %s", sqlStr)
+
   statement, err := d.db.Prepare(sqlStr)
   if err != nil {
     return nil, err
@@ -170,9 +174,12 @@ func (d *DatabaseConnection) getNoLongerFollowings() ([]int64, error) {
   return result, nil
 }
 
-func (d *DatabaseConnection) getNewFollowings() ([]int64, error) {
+func (d DatabaseConnection) getNewFollowings() ([]int64, error) {
 
   sqlStr := "SELECT twitter_id FROM temp_following WHERE twitter_id NOT IN (SELECT twitter_id from following)"
+
+  log.Printf("sqlStr = %s", sqlStr)
+
   statement, err := d.db.Prepare(sqlStr)
   if err != nil {
     return nil, err
@@ -198,9 +205,11 @@ func (d *DatabaseConnection) getNewFollowings() ([]int64, error) {
   return result, nil
 }
 
-func (d *DatabaseConnection) clearFollowers() error {
+func (d DatabaseConnection) clearFollowers() error {
   sqlStr := "DELETE FROM follower"
 
+  log.Printf("sqlStr = %s", sqlStr)
+
   statement, err := d.db.Prepare(sqlStr)
   if err != nil {
     return err
@@ -214,9 +223,11 @@ func (d *DatabaseConnection) clearFollowers() error {
   return nil
 }
 
-func (d *DatabaseConnection) clearTempFollowings() error {
+func (d DatabaseConnection) clearTempFollowings() error {
   sqlStr := "DELETE FROM temp_following"
 
+  log.Printf("sqlStr = %s", sqlStr)
+
   statement, err := d.db.Prepare(sqlStr)
   if err != nil {
     return err
@@ -231,9 +242,11 @@ func (d *DatabaseConnection) clearTempFollowings() error {
 }
 
 
-func (d *DatabaseConnection) clearFollowings() error {
+func (d DatabaseConnection) clearFollowings() error {
   sqlStr := "DELETE FROM following"
 
+  log.Printf("sqlStr = %s", sqlStr)
+
   statement, err := d.db.Prepare(sqlStr)
   if err != nil {
     return err
@@ -247,55 +260,60 @@ func (d *DatabaseConnection) clearFollowings() error {
   return nil
 }
 
-func (d *DatabaseConnection) insertFollowings(ids []int64) error {
-  sqlStr := "INSERT INTO following(twitter_id) VALUES "
-  vals := []interface{}{}
+func (d DatabaseConnection) insertFollowings(ids []int64) error {
+  if len(ids) > 0 {
+    sqlStr := "INSERT INTO following(twitter_id) VALUES "
+    vals := []interface{}{}
 
-  for _, id := range ids {
-    sqlStr += "(?),"
-    vals = append(vals, id)
-  }
+    for _, id := range ids {
+      sqlStr += "(?),"
+      vals = append(vals, id)
+    }
 
-  sqlStr = sqlStr[0:len(sqlStr)-1]
+    sqlStr = sqlStr[0:len(sqlStr)-1]
+    log.Printf("sqlStr = %s", sqlStr)
 
-  statement, err := d.db.Prepare(sqlStr)
-  if err != nil {
-    return err
-  }
+    statement, err := d.db.Prepare(sqlStr)
+    if err != nil {
+      return err
+    }
 
-  _, err = statement.Exec(vals...)
-  if err != nil {
-    return err
-  }
-
-  return nil
-}
-
-func (d *DatabaseConnection) insertTempFollowings(ids []int64) error {
-  sqlStr := "INSERT INTO temp_following(twitter_id) VALUES "
-  vals := []interface{}{}
-
-  for _, id := range ids {
-    sqlStr += "(?),"
-    vals = append(vals, id)
-  }
-
-  sqlStr = sqlStr[0:len(sqlStr)-1]
-
-  statement, err := d.db.Prepare(sqlStr)
-  if err != nil {
-    return err
-  }
-
-  _, err = statement.Exec(vals...)
-  if err != nil {
-    return err
+    _, err = statement.Exec(vals...)
+    if err != nil {
+      return err
+    }
   }
 
   return nil
 }
 
-func (d *DatabaseConnection) insertFollowers(ids []int64) error {
+func (d DatabaseConnection) insertTempFollowings(ids []int64) error {
+  if len(ids) > 0 {
+    sqlStr := "INSERT INTO temp_following(twitter_id) VALUES "
+    vals := []interface{}{}
+
+    for _, id := range ids {
+      sqlStr += "(?),"
+      vals = append(vals, id)
+    }
+
+    sqlStr = sqlStr[0:len(sqlStr)-1]
+    log.Printf("sqlStr = %s", sqlStr)
+
+    statement, err := d.db.Prepare(sqlStr)
+    if err != nil {
+      return err
+    }
+
+    _, err = statement.Exec(vals...)
+    if err != nil {
+      return err
+    }
+  }
+  return nil
+}
+
+func (d DatabaseConnection) insertFollowers(ids []int64) error {
   sqlStr := "INSERT INTO follower(twitter_id) VALUES "
   vals := []interface{}{}
 
@@ -305,6 +323,7 @@ func (d *DatabaseConnection) insertFollowers(ids []int64) error {
   }
 
   sqlStr = sqlStr[0:len(sqlStr)-1]
+  log.Printf("sqlStr = %s", sqlStr)
 
   statement, err := d.db.Prepare(sqlStr)
   if err != nil {
@@ -321,7 +340,7 @@ func (d *DatabaseConnection) insertFollowers(ids []int64) error {
 
 
 
-func (d *DatabaseConnection) InsertFollower(follower *Follower) error {
+func (d DatabaseConnection) InsertFollower(follower *Follower) error {
   follower.TwitterId = 1234
   log.Printf("follower.TwitterId = %d", follower.TwitterId)
 
@@ -366,7 +385,7 @@ func formattedUrl(url *url.URL) string {
 	)
 }
 
-func (d *DatabaseConnection) Exec(strStatement string) (sql.Result, error){
+func (d DatabaseConnection) Exec(strStatement string) (sql.Result, error){
   statement, err := d.db.Prepare(strStatement)
   if err != nil {
     return nil, err
