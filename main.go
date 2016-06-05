@@ -30,6 +30,14 @@ func startWorkers() {
 	}
 
 	go dbSyncWorker.Start()
+
+	unfollowWorker := workers.AutoUnfollowWorker{
+		SleepTime: time.Minute,
+		Twitter: twitter,
+		Database: database,
+	}
+
+	go unfollowWorker.Start()
 }
 
 func main() {

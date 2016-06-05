@@ -55,7 +55,7 @@ var _ = Describe("Integration", func(){
         "cleardb": [
           {
             "credentials": {
-              "uri": "mysql://twitter-auto2:twitter-auto2@localhost:3306/twitter-auto2?reconnect=true"
+              "uri": "mysql://twitter-auto-t1:twitter-auto-t1@localhost:3306/twitter-auto-t1?reconnect=true"
             }
           }
         ]
@@ -78,6 +78,35 @@ var _ = Describe("Integration", func(){
       var follower Follower = Follower{ TwitterId: 153 }
       log.Printf("follower.TwitterId = %d", follower.TwitterId)
       err = db.InsertFollower(&follower)
+      Expect(err).To(BeNil())
+    })
+
+    It("can get unfollow list", func(){
+      db = DatabaseConnection{}
+      err := InitDatabase(&db)
+      Expect(err).To(BeNil())
+
+      r := rand.New(rand.NewSource(99))
+      ids := make([]int64, 2)
+      ids[0] = r.Int63()
+      ids[1] = r.Int63()
+
+      err = db.insertFollowings(ids)
+      Expect(err).To(BeNil())
+
+      err = db.insertFollowers(ids[1:])
+      Expect(err).To(BeNil())
+
+      result, err := db.GetUnfollowList()
+      Expect(err).To(BeNil())
+
+      Expect(len(result)).To(Equal(1))
+      Expect(result[0]).To(Equal(ids[0]))
+
+      err = db.clearFollowings()
+      Expect(err).To(BeNil())
+
+      err = db.clearFollowers()
       Expect(err).To(BeNil())
     })
 
@@ -121,7 +150,7 @@ var _ = Describe("Integration", func(){
       Expect(err).To(BeNil())
       Expect(len(result)).To(Equal(1))
 
-      err = db.unfollow(result)
+      err = db.Unfollow(result)
       Expect(err).To(BeNil())
 
       result, err = db.getNoLongerFollowings()

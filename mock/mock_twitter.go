@@ -28,19 +28,19 @@ func (_m *MockTwitter) EXPECT() *_MockTwitterRecorder {
 	return _m.recorder
 }
 
-func (_m *MockTwitter) GetFollowerIds(_param0 int64) ([]int64, error) {
-	ret := _m.ctrl.Call(_m, "GetFollowerIds", _param0)
+func (_m *MockTwitter) GetSelfFriendIds() ([]int64, error) {
+	ret := _m.ctrl.Call(_m, "GetSelfFriendIds")
 	ret0, _ := ret[0].([]int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockTwitterRecorder) GetFollowerIds(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetFollowerIds", arg0)
+func (_mr *_MockTwitterRecorder) GetSelfFriendIds() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetSelfFriendIds")
 }
 
-func (_m *MockTwitter) GetFriendIds(_param0 int64) ([]int64, error) {
-	ret := _m.ctrl.Call(_m, "GetFriendIds", _param0)
+func (_m *MockTwitter) GetFriendIds(userId int64) ([]int64, error) {
+	ret := _m.ctrl.Call(_m, "GetFriendIds", userId)
 	ret0, _ := ret[0].([]int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -61,21 +61,23 @@ func (_mr *_MockTwitterRecorder) GetSelfFollowerIds() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetSelfFollowerIds")
 }
 
-func (_m *MockTwitter) GetSelfFriendIds() ([]int64, error) {
-	ret := _m.ctrl.Call(_m, "GetSelfFriendIds")
+func (_m *MockTwitter) GetFollowerIds(userId int64) ([]int64, error) {
+	ret := _m.ctrl.Call(_m, "GetFollowerIds", userId)
 	ret0, _ := ret[0].([]int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockTwitterRecorder) GetSelfFriendIds() *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetSelfFriendIds")
+func (_mr *_MockTwitterRecorder) GetFollowerIds(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetFollowerIds", arg0)
 }
 
-func (_m *MockTwitter) Init() {
-	_m.ctrl.Call(_m, "Init")
+func (_m *MockTwitter) Unfollow(userId int64) error {
+	ret := _m.ctrl.Call(_m, "Unfollow", userId)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-func (_mr *_MockTwitterRecorder) Init() *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Init")
+func (_mr *_MockTwitterRecorder) Unfollow(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Unfollow", arg0)
 }

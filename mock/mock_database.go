@@ -4,9 +4,9 @@
 package mock
 
 import (
-	sql "database/sql"
+	// sql "database/sql"
 	gomock "github.com/golang/mock/gomock"
-	. "github.com/victorfong/twitter-auto/model"
+	// . "github.com/victorfong/twitter-auto/model"
 )
 
 // Mock of Database interface
@@ -30,35 +30,6 @@ func (_m *MockDatabase) EXPECT() *_MockDatabaseRecorder {
 	return _m.recorder
 }
 
-func (_m *MockDatabase) Init() {
-	_m.ctrl.Call(_m, "Init")
-}
-
-func (_mr *_MockDatabaseRecorder) Init() *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Init")
-}
-
-func (_m *MockDatabase) Exec(strStatement string) (sql.Result, error) {
-	ret := _m.ctrl.Call(_m, "Exec", strStatement)
-	ret0, _ := ret[0].(sql.Result)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-func (_mr *_MockDatabaseRecorder) Exec(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Exec", arg0)
-}
-
-func (_m *MockDatabase) InsertFollower(follower Follower) error {
-	ret := _m.ctrl.Call(_m, "InsertFollower", follower)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-func (_mr *_MockDatabaseRecorder) InsertFollower(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "InsertFollower", arg0)
-}
-
 func (_m *MockDatabase) SyncFollowers(ids []int64) error {
 	ret := _m.ctrl.Call(_m, "SyncFollowers", ids)
 	ret0, _ := ret[0].(error)
@@ -77,4 +48,25 @@ func (_m *MockDatabase) SyncFollowings(id []int64) error {
 
 func (_mr *_MockDatabaseRecorder) SyncFollowings(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "SyncFollowings", arg0)
+}
+
+func (_m *MockDatabase) GetUnfollowList() ([]int64, error) {
+	ret := _m.ctrl.Call(_m, "GetUnfollowList")
+	ret0, _ := ret[0].([]int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockDatabaseRecorder) GetUnfollowList() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetUnfollowList")
+}
+
+func (_m *MockDatabase) Unfollow(ids []int64) error {
+	ret := _m.ctrl.Call(_m, "Unfollow", ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockDatabaseRecorder) Unfollow(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Unfollow", arg0)
 }

@@ -14,6 +14,8 @@ type Twitter interface {
 
   GetSelfFollowerIds() ([]int64, error)
   GetFollowerIds(userId int64) ([]int64, error)
+
+  Unfollow(userId int64) error
 }
 
 type TwitterConnection struct {
@@ -31,6 +33,13 @@ func NewTwitter() TwitterConnection {
 	log.Printf("Finished Initializing")
 
   return t
+}
+
+func (t TwitterConnection) Unfollow(userId int64) error {
+  log.Printf("Twitter unfollowing %d", userId)
+  _, err := t.api.UnfollowUserId(userId)
+  log.Printf("Finished Twitter unfollowing %d", userId)
+  return err
 }
 
 func (t TwitterConnection) GetSelfFriendIds() ([]int64, error) {

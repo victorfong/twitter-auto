@@ -23,6 +23,9 @@ type Database interface{
 
   SyncFollowers(ids []int64) error
   SyncFollowings(id []int64) error
+
+  GetUnfollowList() ([]int64, error)
+  Unfollow(ids []int64) error
 }
 
 type DatabaseConnection struct{
@@ -100,7 +103,7 @@ func (d DatabaseConnection) SyncFollowings(ids []int64) error {
     return err
   }
 
-  err = d.unfollow(noLongerFollowings)
+  err = d.Unfollow(noLongerFollowings)
   if err != nil {
     return err
   }
@@ -114,7 +117,7 @@ func (d DatabaseConnection) SyncFollowings(ids []int64) error {
   return err
 }
 
-func (d DatabaseConnection) unfollow(ids []int64) error {
+func (d DatabaseConnection) Unfollow(ids []int64) error {
 
   if len(ids) > 0 {
     sqlStr := "UPDATE following SET unfollowed = true WHERE twitter_id IN ("
@@ -142,6 +145,41 @@ func (d DatabaseConnection) unfollow(ids []int64) error {
   }
 
   return nil
+}
+
+func (d DatabaseConnection) GetUnfollowList() ([]int64, error) {
+  sqlStr := string(`SELECT twitter_id FROM following
+    WHERE twitter_id
+      NOT IN (SELECT twitter_id from follower)
+      AND unfollowed = false
+      ORDER BY since
+      LIMIT 1`)
+
+  log.Printf("sqlStr = %s", sqlStr)
+
+  statement, err := d.db.Prepare(sqlStr)
+  if err != nil {
+    return nil, err
+  }
+
+  rows, err := statement.Query()
+  if err != nil {
+    return nil, err
+  }
+
+  result := []int64{}
+  for rows.Next() {
+    var id int64
+    err = rows.Scan(&id)
+
+    if err != nil {
+      return nil, err
+    }
+
+    result = append(result, id)
+  }
+
+  return result, nil
 }
 
 func (d DatabaseConnection) getNoLongerFollowings() ([]int64, error) {
