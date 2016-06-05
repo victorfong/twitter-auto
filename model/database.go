@@ -91,6 +91,33 @@ func (d *DatabaseConnection) SyncFollowings(ids []int64) error {
   return err
 }
 
+func (d *DatabaseConnection) getNewFollowings() ([]int64, error) {
+
+  sqlStr := "SELECT twitter_id FROM temp_following WHERE twitter_id NOT IN (SELECT twitter_id from following)"
+  statement, err := d.db.Prepare(sqlStr)
+  if err != nil {
+    return nil, err
+  }
+
+  rows, err := statement.Query()
+  if err != nil {
+    return nil, err
+  }
+
+  result := []int64{}
+  for rows.Next() {
+    var id int64
+    err = rows.Scan(&id)
+
+    if err != nil {
+      return nil, err
+    }
+
+    result = append(result, id)
+  }
+
+  return result, nil
+}
 
 func (d *DatabaseConnection) clearFollowers() error {
   sqlStr := "DELETE FROM follower"
@@ -204,7 +231,7 @@ func initDbMap(d *DatabaseConnection) error {
   d.dbMap = mysqldbmap
   d.dbMap.AddTableWithName(Follower{}, "follower")
   // .SetKeys(true, "TwitterId")
-	d.dbMap.AddTableWithName(Following{}, "following").SetKeys(true, "Id")
+	d.dbMap.AddTableWithName(Following{}, "following")
 
   return nil
 }

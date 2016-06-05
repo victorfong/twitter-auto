@@ -1,15 +1,13 @@
 -- +migrate Up
 CREATE TABLE `follower`(
-  `id` BIGINT(20) AUTO_INCREMENT,
   `twitter_id` BIGINT(20),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`twitter_id`)
 );
 
 CREATE TABLE `following` (
-  `id` BIGINT(20) AUTO_INCREMENT,
   `twitter_id` BIGINT(20),
   `since` TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`twitter_id`)
 );
 
 CREATE TABLE `temp_following` (

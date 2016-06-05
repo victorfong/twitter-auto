@@ -9,6 +9,5 @@ type Following struct {
 }
 
 type Follower struct {
-  Id int64 `db:"id"`
   TwitterId   int64 `db:"twitter_id"`
 }
