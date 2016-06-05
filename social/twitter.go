@@ -24,24 +24,37 @@ func (t *TwitterConnection) Init() {
 	log.Printf("Finished Initializing")
 }
 
-func (t TwitterConnection) getSelfFriendIds() ([]int64, error) {
+func (t TwitterConnection) GetSelfFriendIds() ([]int64, error) {
   strUserId := os.Getenv("TWITTER_USER_ID")
-  userId, err := strconv.ParseInt(strUserId, 10, 64)
-  if err != nil {
-    return nil, err
-  }
+  // userId, err := strconv.ParseInt(strUserId, 10, 64)
+  // if err != nil {
+  //   return nil, err
+  // }
 
   v := url.Values{}
+  v.Set("user_id", strUserId)
   v.Set("count", "5000")
 
-  c, err := t.api.GetFriendsUser(userId, v)
+  c, err := t.api.GetFriendsIds(v)
   if err != nil {
     return nil, err
   }
 
   return c.Ids, nil
 }
-//
-// func (t TwitterConnection) getFollowerIds(userId int64) ([]int64, error) {
-//
-// }
+
+func (t TwitterConnection) GetFollowerIds(userId int64) ([]int64, error) {
+
+  strUserId := strconv.FormatInt(userId, 10)
+
+  v := url.Values{}
+  v.Set("user_id", strUserId)
+  v.Set("count", "5000")
+
+  c, err := t.api.GetFollowersIds(v)
+  if err != nil {
+    return nil, err
+  }
+
+  return c.Ids, nil
+}

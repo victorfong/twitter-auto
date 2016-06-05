@@ -6,19 +6,28 @@ import (
 
 var _ = Describe("Integration", func(){
   Context("When given valid twitter credentials", func(){
-    It("establishes an API after Init", func(){
-      twitter := TwitterConnection{}
+    var twitter TwitterConnection
+
+    BeforeEach(func() {
+      twitter = TwitterConnection{}
       twitter.Init()
+    })
+
+    It("establishes an API after Init", func(){
       Expect(twitter.api).ToNot(BeNil())
     })
 
     It("can return list of friend Ids", func(){
-      twitter := TwitterConnection{}
-      twitter.Init()
-      ids, err := twitter.getSelfFriendIds()
+      ids, err := twitter.GetSelfFriendIds()
       Expect(err).To(BeNil())
       Expect(len(ids) > 0).To(BeTrue())
+    })
 
+    It("can return list of follower ids", func(){
+      friendIds, err := twitter.GetSelfFriendIds()
+      ids, err := twitter.GetFollowerIds(friendIds[0])
+      Expect(err).To(BeNil())
+      Expect(len(ids) > 0).To(BeTrue())
     })
   })
 })
