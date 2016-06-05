@@ -1,7 +1,7 @@
 package workers
 import (
   . "github.com/onsi/ginkgo"
-  // . "github.com/onsi/gomega"
+  . "github.com/onsi/gomega"
 
   "github.com/golang/mock/gomock"
   "github.com/victorfong/twitter-auto/mock"
@@ -18,13 +18,18 @@ var _ = Describe("Unit", func(){
       twitterFollowers[0] = 0
       twitterFollowers[1] = 1
 
-      twitter.EXPECT().GetSelfFriendIds().Return(twitterFollowers, nil)
+      twitter.EXPECT().GetSelfFollowerIds().Return(twitterFollowers, nil)
+
+      database := mock.NewMockDatabase(ctrl)
+      database.EXPECT().SyncFollowers(twitterFollowers).Return(nil)
 
       worker := DatabaseSyncWorker{
         Twitter: twitter,
+        Database: database,
       }
 
-      worker.syncFollowings()
+      err := worker.syncFollowers()
+      Expect(err).To(BeNil())
 
     })
   })
