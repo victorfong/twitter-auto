@@ -21,8 +21,11 @@ type MySql struct {
 type Database interface{
   Init()
   Exec(strStatement string) (sql.Result, error)
-  SyncFollowers(ids []int64) error
+
   InsertFollower(follower Follower) error
+
+  SyncFollowers(ids []int64) error
+  SyncFollowings(id []int64) error
 }
 
 type DatabaseConnection struct{
@@ -78,6 +81,17 @@ func (d *DatabaseConnection) SyncFollowers(ids []int64) error {
   return nil
 }
 
+func (d *DatabaseConnection) SyncFollowings(ids []int64) error {
+  err := d.insertTempFollowings(ids)
+  // if err != nil {
+  //   return err
+  // }
+  //
+  // err = d.clearTempFollowings()
+  return err
+}
+
+
 func (d *DatabaseConnection) clearFollowers() error {
   sqlStr := "DELETE FROM follower"
 
@@ -87,6 +101,46 @@ func (d *DatabaseConnection) clearFollowers() error {
   }
 
   _, err = statement.Exec()
+  if err != nil {
+    return err
+  }
+
+  return nil
+}
+
+func (d *DatabaseConnection) clearTempFollowings() error {
+  sqlStr := "DELETE FROM temp_following"
+
+  statement, err := d.db.Prepare(sqlStr)
+  if err != nil {
+    return err
+  }
+
+  _, err = statement.Exec()
+  if err != nil {
+    return err
+  }
+
+  return nil
+}
+
+func (d *DatabaseConnection) insertTempFollowings(ids []int64) error {
+  sqlStr := "INSERT INTO temp_following(twitter_id) VALUES "
+  vals := []interface{}{}
+
+  for _, id := range ids {
+    sqlStr += "(?),"
+    vals = append(vals, id)
+  }
+
+  sqlStr = sqlStr[0:len(sqlStr)-1]
+
+  statement, err := d.db.Prepare(sqlStr)
+  if err != nil {
+    return err
+  }
+
+  _, err = statement.Exec(vals...)
   if err != nil {
     return err
   }

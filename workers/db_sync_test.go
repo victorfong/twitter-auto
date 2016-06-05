@@ -33,4 +33,30 @@ var _ = Describe("Unit", func(){
 
     })
   })
+
+  // Context("When there are new following", func(){
+  //   It("sync them in database", func(){
+  //     ctrl := gomock.NewController(GinkgoT())
+	//     defer ctrl.Finish()
+  //
+  //     twitter := mock.NewMockTwitter(ctrl)
+  //     twitterFollowers := make([]int64, 2)
+  //     twitterFollowers[0] = 0
+  //     twitterFollowers[1] = 1
+  //
+  //     twitter.EXPECT().GetSelfFriendIds().Return(twitterFollowers, nil)
+  //
+  //     database := mock.NewMockDatabase(ctrl)
+  //     database.EXPECT().SyncFollowers(twitterFollowers).Return(nil)
+  //
+  //     worker := DatabaseSyncWorker{
+  //       Twitter: twitter,
+  //       Database: database,
+  //     }
+  //
+  //     err := worker.syncFollowers()
+  //     Expect(err).To(BeNil())
+  //
+  //   })
+  // })
 })

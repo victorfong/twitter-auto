@@ -81,6 +81,23 @@ var _ = Describe("Integration", func(){
       Expect(err).To(BeNil())
     })
 
+    It("can insert new temp followings", func() {
+      db = DatabaseConnection{}
+      err := db.Init()
+      Expect(err).To(BeNil())
+
+      r := rand.New(rand.NewSource(99))
+      ids := make([]int64, 2)
+      ids[0] = r.Int63()
+      ids[1] = r.Int63()
+
+      err = db.insertTempFollowings(ids)
+      Expect(err).To(BeNil())
+
+      err = db.clearTempFollowings()
+      Expect(err).To(BeNil())
+    })
+
     It("can sync followers", func(){
       db = DatabaseConnection{}
       err := db.Init()

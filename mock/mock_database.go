@@ -49,6 +49,16 @@ func (_mr *_MockDatabaseRecorder) Exec(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Exec", arg0)
 }
 
+func (_m *MockDatabase) InsertFollower(follower Follower) error {
+	ret := _m.ctrl.Call(_m, "InsertFollower", follower)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockDatabaseRecorder) InsertFollower(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "InsertFollower", arg0)
+}
+
 func (_m *MockDatabase) SyncFollowers(ids []int64) error {
 	ret := _m.ctrl.Call(_m, "SyncFollowers", ids)
 	ret0, _ := ret[0].(error)
@@ -59,12 +69,12 @@ func (_mr *_MockDatabaseRecorder) SyncFollowers(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "SyncFollowers", arg0)
 }
 
-func (_m *MockDatabase) InsertFollower(follower Follower) error {
-	ret := _m.ctrl.Call(_m, "InsertFollower", follower)
+func (_m *MockDatabase) SyncFollowings(id []int64) error {
+	ret := _m.ctrl.Call(_m, "SyncFollowings", id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-func (_mr *_MockDatabaseRecorder) InsertFollower(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "InsertFollower", arg0)
+func (_mr *_MockDatabaseRecorder) SyncFollowings(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "SyncFollowings", arg0)
 }
