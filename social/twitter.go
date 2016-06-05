@@ -10,6 +10,12 @@ import (
 
 type Twitter interface {
   Init()
+
+  GetSelfFriendIds() ([]int64, error)
+  GetFriendIds(userId int64) ([]int64, error)
+
+  GetSelfFollowerIds() ([]int64, error)
+  GetFollowerIds(userId int64) ([]int64, error)
 }
 
 type TwitterConnection struct {
@@ -25,11 +31,15 @@ func (t *TwitterConnection) Init() {
 }
 
 func (t TwitterConnection) GetSelfFriendIds() ([]int64, error) {
-  strUserId := os.Getenv("TWITTER_USER_ID")
-  // userId, err := strconv.ParseInt(strUserId, 10, 64)
-  // if err != nil {
-  //   return nil, err
-  // }
+  userId, err := getCurrentUserId()
+  if err != nil {
+    return nil, err
+  }
+  return t.GetFriendIds(userId)
+}
+
+func (t TwitterConnection) GetFriendIds(userId int64) ([]int64, error) {
+  strUserId := strconv.FormatInt(userId, 10)
 
   v := url.Values{}
   v.Set("user_id", strUserId)
@@ -43,8 +53,15 @@ func (t TwitterConnection) GetSelfFriendIds() ([]int64, error) {
   return c.Ids, nil
 }
 
-func (t TwitterConnection) GetFollowerIds(userId int64) ([]int64, error) {
+func (t TwitterConnection) GetSelfFollowerIds() ([]int64, error) {
+  userId, err := getCurrentUserId()
+  if err != nil {
+    return nil, err
+  }
+  return t.GetFollowerIds(userId)
+}
 
+func (t TwitterConnection) GetFollowerIds(userId int64) ([]int64, error) {
   strUserId := strconv.FormatInt(userId, 10)
 
   v := url.Values{}
@@ -57,4 +74,9 @@ func (t TwitterConnection) GetFollowerIds(userId int64) ([]int64, error) {
   }
 
   return c.Ids, nil
+}
+
+func getCurrentUserId() (int64, error) {
+  strUserId := os.Getenv("TWITTER_USER_ID")
+  return strconv.ParseInt(strUserId, 10, 64)
 }
