@@ -81,3 +81,13 @@ func (_m *MockTwitter) Unfollow(userId int64) error {
 func (_mr *_MockTwitterRecorder) Unfollow(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Unfollow", arg0)
 }
+
+func (_m *MockTwitter) Follow(userId int64) error {
+	ret := _m.ctrl.Call(_m, "Follow", userId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockTwitterRecorder) Follow(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Follow", arg0)
+}

@@ -81,6 +81,32 @@ var _ = Describe("Integration", func(){
       Expect(err).To(BeNil())
     })
 
+    Context("When a user is already followed", func(){
+      It("can get determine if a user is already followed", func(){
+        db = DatabaseConnection{}
+        err := InitDatabase(&db)
+        Expect(err).To(BeNil())
+
+        r := rand.New(rand.NewSource(99))
+        ids := make([]int64, 2)
+        ids[0] = r.Int63()
+
+        result, err := db.HasAlreadyFollowed(ids[0])
+        Expect(err).To(BeNil())
+        Expect(result).To(BeFalse())
+
+        err = db.InsertFollowings(ids)
+        Expect(err).To(BeNil())
+
+        result, err = db.HasAlreadyFollowed(ids[0])
+        Expect(err).To(BeNil())
+        Expect(result).To(BeTrue())
+
+        err = db.clearFollowings()
+        Expect(err).To(BeNil())
+      })
+    })
+
     It("can get unfollow list", func(){
       db = DatabaseConnection{}
       err := InitDatabase(&db)
@@ -91,7 +117,7 @@ var _ = Describe("Integration", func(){
       ids[0] = r.Int63()
       ids[1] = r.Int63()
 
-      err = db.insertFollowings(ids)
+      err = db.InsertFollowings(ids)
       Expect(err).To(BeNil())
 
       err = db.insertFollowers(ids[1:])
@@ -120,7 +146,7 @@ var _ = Describe("Integration", func(){
       ids[0] = r.Int63()
       ids[1] = r.Int63()
 
-      err = db.insertFollowings(ids[1:])
+      err = db.InsertFollowings(ids[1:])
       Expect(err).To(BeNil())
 
       err = db.SyncFollowings(ids)
@@ -140,7 +166,7 @@ var _ = Describe("Integration", func(){
       ids[0] = r.Int63()
       ids[1] = r.Int63()
 
-      err = db.insertFollowings(ids)
+      err = db.InsertFollowings(ids)
       Expect(err).To(BeNil())
 
       err = db.insertTempFollowings(ids[1:])
@@ -177,7 +203,7 @@ var _ = Describe("Integration", func(){
       err = db.insertTempFollowings(ids)
       Expect(err).To(BeNil())
 
-      err = db.insertFollowings(ids[1:])
+      err = db.InsertFollowings(ids[1:])
       Expect(err).To(BeNil())
 
       result, err := db.getNewFollowings()

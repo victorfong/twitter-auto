@@ -26,6 +26,9 @@ type Database interface{
 
   GetUnfollowList() ([]int64, error)
   Unfollow(ids []int64) error
+
+  HasAlreadyFollowed(userId int64) (bool, error)
+  InsertFollowings(ids []int64) error
 }
 
 type DatabaseConnection struct{
@@ -108,13 +111,36 @@ func (d DatabaseConnection) SyncFollowings(ids []int64) error {
     return err
   }
 
-  err = d.insertFollowings(newFollowings)
+  err = d.InsertFollowings(newFollowings)
   if err != nil {
     return err
   }
 
   err = d.clearTempFollowings()
   return err
+}
+
+func (d DatabaseConnection) HasAlreadyFollowed(userId int64) (bool, error) {
+  sqlStr := string(`SELECT twitter_id FROM following
+    WHERE twitter_id = ?`)
+
+  log.Printf("sqlStr = %s", sqlStr)
+
+  statement, err := d.db.Prepare(sqlStr)
+  if err != nil {
+    return true, err
+  }
+
+  rows, err := statement.Query(userId)
+  if err != nil {
+    return true, err
+  }
+
+  if rows.Next() {
+    return true, nil
+  } else {
+    return false, nil
+  }
 }
 
 func (d DatabaseConnection) Unfollow(ids []int64) error {
@@ -298,7 +324,7 @@ func (d DatabaseConnection) clearFollowings() error {
   return nil
 }
 
-func (d DatabaseConnection) insertFollowings(ids []int64) error {
+func (d DatabaseConnection) InsertFollowings(ids []int64) error {
   if len(ids) > 0 {
     sqlStr := "INSERT INTO following(twitter_id) VALUES "
     vals := []interface{}{}

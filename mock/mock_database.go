@@ -70,3 +70,24 @@ func (_m *MockDatabase) Unfollow(ids []int64) error {
 func (_mr *_MockDatabaseRecorder) Unfollow(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Unfollow", arg0)
 }
+
+func (_m *MockDatabase) HasAlreadyFollowed(userId int64) (bool, error) {
+	ret := _m.ctrl.Call(_m, "HasAlreadyFollowed", userId)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockDatabaseRecorder) HasAlreadyFollowed(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "HasAlreadyFollowed", arg0)
+}
+
+func (_m *MockDatabase) InsertFollowings(ids []int64) error {
+	ret := _m.ctrl.Call(_m, "InsertFollowings", ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockDatabaseRecorder) InsertFollowings(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "InsertFollowings", arg0)
+}

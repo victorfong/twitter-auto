@@ -38,6 +38,14 @@ func startWorkers() {
 	}
 
 	go unfollowWorker.Start()
+
+	followWorker := workers.AutoFollowWorker{
+		SleepTime: time.Minute,
+		Twitter: twitter,
+		Database: database,
+	}
+
+	go followWorker.Start()
 }
 
 func main() {
