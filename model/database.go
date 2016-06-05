@@ -21,6 +21,7 @@ type MySql struct {
 type Database interface{
   Init()
   Exec(strStatement string) (sql.Result, error)
+  SyncFollowers(ids []int64) error
   InsertFollower(follower Follower) error
 }
 
@@ -52,6 +53,72 @@ func (d *DatabaseConnection) Init() error{
   log.Println("Finished Initializing Database")
   return nil
 }
+
+func (d *DatabaseConnection) SyncFollowers(ids []int64) error {
+  tx, err := d.db.Begin()
+  if err != nil {
+    return err
+  }
+
+  err = d.clearFollowers()
+  if err != nil {
+    return err
+  }
+
+  err = d.insertFollowers(ids)
+  if err != nil {
+    return err
+  }
+
+  err = tx.Commit()
+  if err != nil {
+    return err
+  }
+
+  return nil
+}
+
+func (d *DatabaseConnection) clearFollowers() error {
+  sqlStr := "DELETE FROM follower"
+
+  statement, err := d.db.Prepare(sqlStr)
+  if err != nil {
+    return err
+  }
+
+  _, err = statement.Exec()
+  if err != nil {
+    return err
+  }
+
+  return nil
+}
+
+func (d *DatabaseConnection) insertFollowers(ids []int64) error {
+  sqlStr := "INSERT INTO follower(twitter_id) VALUES "
+  vals := []interface{}{}
+
+  for _, id := range ids {
+    sqlStr += "(?),"
+    vals = append(vals, id)
+  }
+
+  sqlStr = sqlStr[0:len(sqlStr)-1]
+
+  statement, err := d.db.Prepare(sqlStr)
+  if err != nil {
+    return err
+  }
+
+  _, err = statement.Exec(vals...)
+  if err != nil {
+    return err
+  }
+
+  return nil
+}
+
+
 
 func (d *DatabaseConnection) InsertFollower(follower *Follower) error {
   follower.TwitterId = 1234

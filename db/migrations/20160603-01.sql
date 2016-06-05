@@ -12,6 +12,12 @@ CREATE TABLE `following` (
   PRIMARY KEY (`id`)
 );
 
+CREATE TABLE `temp_following` (
+  `twitter_id` BIGINT(20),
+  PRIMARY KEY (`twitter_id`)
+);
+
 -- +migrate Down
 drop table `follower`;
 drop table `following`;
+drop table `temp_following`;

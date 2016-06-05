@@ -6,7 +6,7 @@ package mock
 import (
 	sql "database/sql"
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/victorfong/twitter-auto/model"
+	. "github.com/victorfong/twitter-auto/model"
 )
 
 // Mock of Database interface
@@ -30,8 +30,16 @@ func (_m *MockDatabase) EXPECT() *_MockDatabaseRecorder {
 	return _m.recorder
 }
 
-func (_m *MockDatabase) Exec(_param0 string) (sql.Result, error) {
-	ret := _m.ctrl.Call(_m, "Exec", _param0)
+func (_m *MockDatabase) Init() {
+	_m.ctrl.Call(_m, "Init")
+}
+
+func (_mr *_MockDatabaseRecorder) Init() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Init")
+}
+
+func (_m *MockDatabase) Exec(strStatement string) (sql.Result, error) {
+	ret := _m.ctrl.Call(_m, "Exec", strStatement)
 	ret0, _ := ret[0].(sql.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -41,16 +49,18 @@ func (_mr *_MockDatabaseRecorder) Exec(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Exec", arg0)
 }
 
-func (_m *MockDatabase) Init() {
-	_m.ctrl.Call(_m, "Init")
+func (_m *MockDatabase) SyncFollowers(ids []int64) error {
+	ret := _m.ctrl.Call(_m, "SyncFollowers", ids)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-func (_mr *_MockDatabaseRecorder) Init() *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Init")
+func (_mr *_MockDatabaseRecorder) SyncFollowers(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "SyncFollowers", arg0)
 }
 
-func (_m *MockDatabase) InsertFollower(_param0 model.Follower) error {
-	ret := _m.ctrl.Call(_m, "InsertFollower", _param0)
+func (_m *MockDatabase) InsertFollower(follower Follower) error {
+	ret := _m.ctrl.Call(_m, "InsertFollower", follower)
 	ret0, _ := ret[0].(error)
 	return ret0
 }

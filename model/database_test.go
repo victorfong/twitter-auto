@@ -4,6 +4,7 @@ import (
 	. "github.com/onsi/gomega"
   "os"
   "log"
+  "math/rand"
 )
 
 var _ = Describe("Unit", func(){
@@ -79,6 +80,24 @@ var _ = Describe("Integration", func(){
       err = db.InsertFollower(&follower)
       Expect(err).To(BeNil())
     })
+
+    It("can sync followers", func(){
+      db = DatabaseConnection{}
+      err := db.Init()
+      Expect(err).To(BeNil())
+
+      r := rand.New(rand.NewSource(99))
+      ids := make([]int64, 2)
+      ids[0] = r.Int63()
+      ids[1] = r.Int63()
+
+      err = db.SyncFollowers(ids)
+      Expect(err).To(BeNil())
+
+      err = db.clearFollowers()
+      Expect(err).To(BeNil())
+    })
+
   })
 
   Context("when database connection is invalid", func(){
