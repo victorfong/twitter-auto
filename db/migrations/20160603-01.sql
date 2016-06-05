@@ -7,6 +7,7 @@ CREATE TABLE `follower`(
 CREATE TABLE `following` (
   `twitter_id` BIGINT(20),
   `since` TIMESTAMP,
+  `unfollowed` BOOLEAN DEFAULT false,
   PRIMARY KEY (`twitter_id`)
 );
 

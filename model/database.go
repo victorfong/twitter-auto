@@ -26,6 +26,7 @@ type Database interface{
 
   SyncFollowers(ids []int64) error
   SyncFollowings(id []int64) error
+
 }
 
 type DatabaseConnection struct{
@@ -83,12 +84,90 @@ func (d *DatabaseConnection) SyncFollowers(ids []int64) error {
 
 func (d *DatabaseConnection) SyncFollowings(ids []int64) error {
   err := d.insertTempFollowings(ids)
-  // if err != nil {
-  //   return err
-  // }
-  //
-  // err = d.clearTempFollowings()
+  if err != nil {
+    return err
+  }
+
+  newFollowings, err := d.getNewFollowings()
+  if err != nil {
+    return err
+  }
+
+  noLongerFollowings, err := d.getNoLongerFollowings()
+  // _, err = d.getNoLongerFollowings()
+  if err != nil {
+    return err
+  }
+
+  err = d.unfollow(noLongerFollowings)
+  if err != nil {
+    return err
+  }
+
+  err = d.insertFollowings(newFollowings)
+  if err != nil {
+    return err
+  }
+
+  err = d.clearTempFollowings()
   return err
+}
+
+func (d *DatabaseConnection) unfollow(ids []int64) error {
+
+  if len(ids) > 0 {
+    sqlStr := "UPDATE following SET unfollowed = true WHERE twitter_id IN ("
+    vals := []interface{}{}
+
+    for _, id := range ids {
+      sqlStr += "?, "
+      vals = append(vals, id)
+    }
+
+    sqlStr = sqlStr[0:len(sqlStr)-2]
+    sqlStr += ")"
+
+    log.Printf("sqlStr = %s", sqlStr)
+
+    statement, err := d.db.Prepare(sqlStr)
+    if err != nil {
+      return err
+    }
+
+    _, err = statement.Exec(vals...)
+    if err != nil {
+      return err
+    }
+  }
+
+  return nil
+}
+
+func (d *DatabaseConnection) getNoLongerFollowings() ([]int64, error) {
+  sqlStr := "SELECT twitter_id FROM following WHERE twitter_id NOT IN (SELECT twitter_id from temp_following) AND unfollowed = false ORDER BY since"
+  statement, err := d.db.Prepare(sqlStr)
+  if err != nil {
+    return nil, err
+  }
+
+  rows, err := statement.Query()
+  if err != nil {
+    return nil, err
+  }
+
+  result := []int64{}
+  for rows.Next() {
+    var id int64
+    err = rows.Scan(&id)
+
+    if err != nil {
+      return nil, err
+    }
+
+    result = append(result, id)
+  }
+
+  return result, nil
 }
 
 func (d *DatabaseConnection) getNewFollowings() ([]int64, error) {
@@ -144,6 +223,47 @@ func (d *DatabaseConnection) clearTempFollowings() error {
   }
 
   _, err = statement.Exec()
+  if err != nil {
+    return err
+  }
+
+  return nil
+}
+
+
+func (d *DatabaseConnection) clearFollowings() error {
+  sqlStr := "DELETE FROM following"
+
+  statement, err := d.db.Prepare(sqlStr)
+  if err != nil {
+    return err
+  }
+
+  _, err = statement.Exec()
+  if err != nil {
+    return err
+  }
+
+  return nil
+}
+
+func (d *DatabaseConnection) insertFollowings(ids []int64) error {
+  sqlStr := "INSERT INTO following(twitter_id) VALUES "
+  vals := []interface{}{}
+
+  for _, id := range ids {
+    sqlStr += "(?),"
+    vals = append(vals, id)
+  }
+
+  sqlStr = sqlStr[0:len(sqlStr)-1]
+
+  statement, err := d.db.Prepare(sqlStr)
+  if err != nil {
+    return err
+  }
+
+  _, err = statement.Exec(vals...)
   if err != nil {
     return err
   }

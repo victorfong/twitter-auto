@@ -81,6 +81,60 @@ var _ = Describe("Integration", func(){
       Expect(err).To(BeNil())
     })
 
+    It("can sync followings", func(){
+      db = DatabaseConnection{}
+      err := db.Init()
+      Expect(err).To(BeNil())
+
+      r := rand.New(rand.NewSource(99))
+      ids := make([]int64, 2)
+      ids[0] = r.Int63()
+      ids[1] = r.Int63()
+
+      err = db.insertFollowings(ids[1:])
+      Expect(err).To(BeNil())
+
+      err = db.SyncFollowings(ids)
+      Expect(err).To(BeNil())
+
+      err = db.clearFollowings()
+      Expect(err).To(BeNil())
+    })
+
+    It("can find new no longer followings", func() {
+      db = DatabaseConnection{}
+      err := db.Init()
+      Expect(err).To(BeNil())
+
+      r := rand.New(rand.NewSource(99))
+      ids := make([]int64, 2)
+      ids[0] = r.Int63()
+      ids[1] = r.Int63()
+
+      err = db.insertFollowings(ids)
+      Expect(err).To(BeNil())
+
+      err = db.insertTempFollowings(ids[1:])
+      Expect(err).To(BeNil())
+
+      result, err := db.getNoLongerFollowings()
+      Expect(err).To(BeNil())
+      Expect(len(result)).To(Equal(1))
+
+      err = db.unfollow(result)
+      Expect(err).To(BeNil())
+
+      result, err = db.getNoLongerFollowings()
+      Expect(err).To(BeNil())
+      Expect(len(result)).To(Equal(0))
+
+      err = db.clearTempFollowings()
+      Expect(err).To(BeNil())
+
+      err = db.clearFollowings()
+      Expect(err).To(BeNil())
+    })
+
     It("can find new following", func() {
       db = DatabaseConnection{}
       err := db.Init()
@@ -94,6 +148,9 @@ var _ = Describe("Integration", func(){
       err = db.insertTempFollowings(ids)
       Expect(err).To(BeNil())
 
+      err = db.insertFollowings(ids[1:])
+      Expect(err).To(BeNil())
+
       result, err := db.getNewFollowings()
       Expect(err).To(BeNil())
 
@@ -101,9 +158,12 @@ var _ = Describe("Integration", func(){
         log.Printf("id = %d\n", id)
       }
 
-      Expect(len(result)).To(Equal(2))
+      Expect(len(result)).To(Equal(1))
 
       err = db.clearTempFollowings()
+      Expect(err).To(BeNil())
+
+      err = db.clearFollowings()
       Expect(err).To(BeNil())
     })
 
