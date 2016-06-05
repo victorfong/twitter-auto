@@ -11,5 +11,14 @@ var _ = Describe("Integration", func(){
       twitter.Init()
       Expect(twitter.api).ToNot(BeNil())
     })
+
+    It("can return list of friend Ids", func(){
+      twitter := TwitterConnection{}
+      twitter.Init()
+      ids, err := twitter.getSelfFriendIds()
+      Expect(err).To(BeNil())
+      Expect(len(ids) > 0).To(BeTrue())
+
+    })
   })
 })
