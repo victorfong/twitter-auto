@@ -181,7 +181,7 @@ func (d DatabaseConnection) GetUnfollowList() ([]int64, error) {
       NOT IN (SELECT twitter_id from follower)
       AND unfollowed = false
       ORDER BY since
-      LIMIT 1`)
+      LIMIT 51`)
 
 	log.Printf("sqlStr = %s", sqlStr)
 

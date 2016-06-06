@@ -16,9 +16,9 @@ type DatabaseSyncWorker struct {
 func (w *DatabaseSyncWorker) Start() {
 
   for true {
+    time.Sleep(w.SleepTime)
     go w.syncFollowings()
     go w.syncFollowers()
-    time.Sleep(w.SleepTime)
   }
 
 }

@@ -31,27 +31,30 @@ func (w AutoFollowWorker) findCandidate(channel chan int64) {
     followerIds, err := w.Twitter.GetSelfFollowerIds()
     if err != nil {
       log.Printf("Error while finding candidate: %v", err)
+      time.Sleep(w.SleepTime)
     }
 
-    index := r.Intn(len(followerIds))
-    candidateIds, err := w.Twitter.GetFollowerIds(followerIds[index])
-    for i := 0; i < 10 && i < len(candidateIds); i++ {
-      index := r.Intn(len(candidateIds))
-      candidateId := candidateIds[index]
+    if len(followerIds) > 0 {
+      index := r.Intn(len(followerIds))
+      candidateIds, err := w.Twitter.GetFollowerIds(followerIds[index])
+      for i := 0; i < 10 && i < len(candidateIds); i++ {
+        index := r.Intn(len(candidateIds))
+        candidateId := candidateIds[index]
 
-      alreadyFollowed, err := w.Database.HasAlreadyFollowed(candidateId)
+        alreadyFollowed, err := w.Database.HasAlreadyFollowed(candidateId)
 
-      if err == nil {
-        if(alreadyFollowed){
-            log.Printf("Already followed candidate %d", candidateId)
+        if err == nil {
+          if(alreadyFollowed){
+              log.Printf("Already followed candidate %d", candidateId)
+          } else {
+            log.Printf("Adding candidate id %d to queue", candidateId)
+            channel <- candidateId
+          }
         } else {
-          log.Printf("Adding candidate id %d to queue", candidateId)
-          channel <- candidateId
+          log.Printf("Error while finding candidate: %v", err)
         }
-      } else {
-        log.Printf("Error while finding candidate: %v", err)
-      }
 
+      }
     }
   }
 }
