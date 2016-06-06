@@ -1,422 +1,421 @@
 package model
 
 import (
-  "fmt"
-  "os"
-  "log"
-  "errors"
-  "encoding/json"
-  "net/url"
+	//	"encoding/json"
+	"errors"
+	"fmt"
+	"log"
+	"net/url"
+	"os"
 
-  _ "github.com/go-sql-driver/mysql"
-  "database/sql"
-  "github.com/coopernurse/gorp"
-  "github.com/rubenv/sql-migrate"
+	"database/sql"
+	"github.com/coopernurse/gorp"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/rubenv/sql-migrate"
 )
 
 type MySql struct {
-  Cleardb []map[string]map[string]string
+	Cleardb []map[string]map[string]string
 }
 
-type Database interface{
-  // InsertFollower(follower Follower) error
+type Database interface {
+	// InsertFollower(follower Follower) error
 
-  SyncFollowers(ids []int64) error
-  SyncFollowings(id []int64) error
+	SyncFollowers(ids []int64) error
+	SyncFollowings(id []int64) error
 
-  GetUnfollowList() ([]int64, error)
-  Unfollow(ids []int64) error
+	GetUnfollowList() ([]int64, error)
+	Unfollow(ids []int64) error
 
-  HasAlreadyFollowed(userId int64) (bool, error)
-  InsertFollowings(ids []int64) error
+	HasAlreadyFollowed(userId int64) (bool, error)
+	InsertFollowings(ids []int64) error
 }
 
-type DatabaseConnection struct{
-  db *sql.DB
-  dbMap *gorp.DbMap
+type DatabaseConnection struct {
+	db    *sql.DB
+	dbMap *gorp.DbMap
 }
 
-func InitDatabase(d *DatabaseConnection) error{
-  log.Println("Initializing Database")
+func InitDatabase(d *DatabaseConnection) error {
+	log.Println("Initializing Database")
 
-  uri, err := getURI()
-  if err != nil {
-    return err
-  }
+	uri, err := getURI()
+	if err != nil {
+		return err
+	}
 
-  db, err := initConnection(uri)
-  if err != nil {
-    return err
-  }
-  d.db = db
+	log.Printf("Connecting to %v\n", uri)
 
-  // InitDb()
-  err = initDbMap(d)
-  if err != nil {
-    return err
-  }
+	db, err := initConnection(uri)
+	if err != nil {
+		return err
+	}
+	d.db = db
 
-  log.Println("Finished Initializing Database")
-  return nil
+	// InitDb()
+	err = initDbMap(d)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Finished Initializing Database")
+	return nil
 }
 
 func (d DatabaseConnection) SyncFollowers(ids []int64) error {
-  tx, err := d.db.Begin()
-  if err != nil {
-    return err
-  }
+	tx, err := d.db.Begin()
+	if err != nil {
+		return err
+	}
 
-  err = d.clearFollowers()
-  if err != nil {
-    return err
-  }
+	err = d.clearFollowers()
+	if err != nil {
+		return err
+	}
 
-  err = d.insertFollowers(ids)
-  if err != nil {
-    return err
-  }
+	err = d.insertFollowers(ids)
+	if err != nil {
+		return err
+	}
 
-  err = tx.Commit()
-  if err != nil {
-    return err
-  }
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 
-  return nil
+	return nil
 }
 
 func (d DatabaseConnection) SyncFollowings(ids []int64) error {
-  err := d.clearTempFollowings()
-  if err != nil {
-    return err
-  }
+	err := d.clearTempFollowings()
+	if err != nil {
+		return err
+	}
 
-  err = d.insertTempFollowings(ids)
-  if err != nil {
-    return err
-  }
+	err = d.insertTempFollowings(ids)
+	if err != nil {
+		return err
+	}
 
-  newFollowings, err := d.getNewFollowings()
-  if err != nil {
-    return err
-  }
+	newFollowings, err := d.getNewFollowings()
+	if err != nil {
+		return err
+	}
 
-  noLongerFollowings, err := d.getNoLongerFollowings()
-  // _, err = d.getNoLongerFollowings()
-  if err != nil {
-    return err
-  }
+	noLongerFollowings, err := d.getNoLongerFollowings()
+	// _, err = d.getNoLongerFollowings()
+	if err != nil {
+		return err
+	}
 
-  err = d.Unfollow(noLongerFollowings)
-  if err != nil {
-    return err
-  }
+	err = d.Unfollow(noLongerFollowings)
+	if err != nil {
+		return err
+	}
 
-  err = d.InsertFollowings(newFollowings)
-  if err != nil {
-    return err
-  }
+	err = d.InsertFollowings(newFollowings)
+	if err != nil {
+		return err
+	}
 
-  err = d.clearTempFollowings()
-  return err
+	err = d.clearTempFollowings()
+	return err
 }
 
 func (d DatabaseConnection) HasAlreadyFollowed(userId int64) (bool, error) {
-  sqlStr := string(`SELECT twitter_id FROM following
+	sqlStr := string(`SELECT twitter_id FROM following
     WHERE twitter_id = ?`)
 
-  log.Printf("sqlStr = %s", sqlStr)
+	log.Printf("sqlStr = %s", sqlStr)
 
-  statement, err := d.db.Prepare(sqlStr)
-  if err != nil {
-    return true, err
-  }
+	statement, err := d.db.Prepare(sqlStr)
+	if err != nil {
+		return true, err
+	}
 
-  rows, err := statement.Query(userId)
-  if err != nil {
-    return true, err
-  }
+	rows, err := statement.Query(userId)
+	if err != nil {
+		return true, err
+	}
 
-  if rows.Next() {
-    return true, nil
-  } else {
-    return false, nil
-  }
+	if rows.Next() {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
 
 func (d DatabaseConnection) Unfollow(ids []int64) error {
 
-  if len(ids) > 0 {
-    sqlStr := "UPDATE following SET unfollowed = true WHERE twitter_id IN ("
-    vals := []interface{}{}
+	if len(ids) > 0 {
+		sqlStr := "UPDATE following SET unfollowed = true WHERE twitter_id IN ("
+		vals := []interface{}{}
 
-    for _, id := range ids {
-      sqlStr += "?, "
-      vals = append(vals, id)
-    }
+		for _, id := range ids {
+			sqlStr += "?, "
+			vals = append(vals, id)
+		}
 
-    sqlStr = sqlStr[0:len(sqlStr)-2]
-    sqlStr += ")"
+		sqlStr = sqlStr[0 : len(sqlStr)-2]
+		sqlStr += ")"
 
-    log.Printf("sqlStr = %s", sqlStr)
+		log.Printf("sqlStr = %s", sqlStr)
 
-    statement, err := d.db.Prepare(sqlStr)
-    if err != nil {
-      return err
-    }
+		statement, err := d.db.Prepare(sqlStr)
+		if err != nil {
+			return err
+		}
 
-    _, err = statement.Exec(vals...)
-    if err != nil {
-      return err
-    }
-  }
+		_, err = statement.Exec(vals...)
+		if err != nil {
+			return err
+		}
+	}
 
-  return nil
+	return nil
 }
 
 func (d DatabaseConnection) GetUnfollowList() ([]int64, error) {
-  sqlStr := string(`SELECT twitter_id FROM following
+	sqlStr := string(`SELECT twitter_id FROM following
     WHERE twitter_id
       NOT IN (SELECT twitter_id from follower)
       AND unfollowed = false
       ORDER BY since
       LIMIT 1`)
 
-  log.Printf("sqlStr = %s", sqlStr)
+	log.Printf("sqlStr = %s", sqlStr)
 
-  statement, err := d.db.Prepare(sqlStr)
-  if err != nil {
-    return nil, err
-  }
+	statement, err := d.db.Prepare(sqlStr)
+	if err != nil {
+		return nil, err
+	}
 
-  rows, err := statement.Query()
-  if err != nil {
-    return nil, err
-  }
+	rows, err := statement.Query()
+	if err != nil {
+		return nil, err
+	}
 
-  result := []int64{}
-  for rows.Next() {
-    var id int64
-    err = rows.Scan(&id)
+	result := []int64{}
+	for rows.Next() {
+		var id int64
+		err = rows.Scan(&id)
 
-    if err != nil {
-      return nil, err
-    }
+		if err != nil {
+			return nil, err
+		}
 
-    result = append(result, id)
-  }
+		result = append(result, id)
+	}
 
-  return result, nil
+	return result, nil
 }
 
 func (d DatabaseConnection) getNoLongerFollowings() ([]int64, error) {
-  sqlStr := "SELECT twitter_id FROM following WHERE twitter_id NOT IN (SELECT twitter_id from temp_following) AND unfollowed = false ORDER BY since"
+	sqlStr := "SELECT twitter_id FROM following WHERE twitter_id NOT IN (SELECT twitter_id from temp_following) AND unfollowed = false ORDER BY since"
 
-  log.Printf("sqlStr = %s", sqlStr)
+	log.Printf("sqlStr = %s", sqlStr)
 
-  statement, err := d.db.Prepare(sqlStr)
-  if err != nil {
-    return nil, err
-  }
+	statement, err := d.db.Prepare(sqlStr)
+	if err != nil {
+		return nil, err
+	}
 
-  rows, err := statement.Query()
-  if err != nil {
-    return nil, err
-  }
+	rows, err := statement.Query()
+	if err != nil {
+		return nil, err
+	}
 
-  result := []int64{}
-  for rows.Next() {
-    var id int64
-    err = rows.Scan(&id)
+	result := []int64{}
+	for rows.Next() {
+		var id int64
+		err = rows.Scan(&id)
 
-    if err != nil {
-      return nil, err
-    }
+		if err != nil {
+			return nil, err
+		}
 
-    result = append(result, id)
-  }
+		result = append(result, id)
+	}
 
-  return result, nil
+	return result, nil
 }
 
 func (d DatabaseConnection) getNewFollowings() ([]int64, error) {
 
-  sqlStr := "SELECT twitter_id FROM temp_following WHERE twitter_id NOT IN (SELECT twitter_id from following)"
+	sqlStr := "SELECT twitter_id FROM temp_following WHERE twitter_id NOT IN (SELECT twitter_id from following)"
 
-  log.Printf("sqlStr = %s", sqlStr)
+	log.Printf("sqlStr = %s", sqlStr)
 
-  statement, err := d.db.Prepare(sqlStr)
-  if err != nil {
-    return nil, err
-  }
+	statement, err := d.db.Prepare(sqlStr)
+	if err != nil {
+		return nil, err
+	}
 
-  rows, err := statement.Query()
-  if err != nil {
-    return nil, err
-  }
+	rows, err := statement.Query()
+	if err != nil {
+		return nil, err
+	}
 
-  result := []int64{}
-  for rows.Next() {
-    var id int64
-    err = rows.Scan(&id)
+	result := []int64{}
+	for rows.Next() {
+		var id int64
+		err = rows.Scan(&id)
 
-    if err != nil {
-      return nil, err
-    }
+		if err != nil {
+			return nil, err
+		}
 
-    result = append(result, id)
-  }
+		result = append(result, id)
+	}
 
-  return result, nil
+	return result, nil
 }
 
 func (d DatabaseConnection) clearFollowers() error {
-  sqlStr := "DELETE FROM follower"
+	sqlStr := "DELETE FROM follower"
 
-  log.Printf("sqlStr = %s", sqlStr)
+	log.Printf("sqlStr = %s", sqlStr)
 
-  statement, err := d.db.Prepare(sqlStr)
-  if err != nil {
-    return err
-  }
+	statement, err := d.db.Prepare(sqlStr)
+	if err != nil {
+		return err
+	}
 
-  _, err = statement.Exec()
-  if err != nil {
-    return err
-  }
+	_, err = statement.Exec()
+	if err != nil {
+		return err
+	}
 
-  return nil
+	return nil
 }
 
 func (d DatabaseConnection) clearTempFollowings() error {
-  sqlStr := "DELETE FROM temp_following"
+	sqlStr := "DELETE FROM temp_following"
 
-  log.Printf("sqlStr = %s", sqlStr)
+	log.Printf("sqlStr = %s", sqlStr)
 
-  statement, err := d.db.Prepare(sqlStr)
-  if err != nil {
-    return err
-  }
+	statement, err := d.db.Prepare(sqlStr)
+	if err != nil {
+		return err
+	}
 
-  _, err = statement.Exec()
-  if err != nil {
-    return err
-  }
+	_, err = statement.Exec()
+	if err != nil {
+		return err
+	}
 
-  return nil
+	return nil
 }
 
-
 func (d DatabaseConnection) clearFollowings() error {
-  sqlStr := "DELETE FROM following"
+	sqlStr := "DELETE FROM following"
 
-  log.Printf("sqlStr = %s", sqlStr)
+	log.Printf("sqlStr = %s", sqlStr)
 
-  statement, err := d.db.Prepare(sqlStr)
-  if err != nil {
-    return err
-  }
+	statement, err := d.db.Prepare(sqlStr)
+	if err != nil {
+		return err
+	}
 
-  _, err = statement.Exec()
-  if err != nil {
-    return err
-  }
+	_, err = statement.Exec()
+	if err != nil {
+		return err
+	}
 
-  return nil
+	return nil
 }
 
 func (d DatabaseConnection) InsertFollowings(ids []int64) error {
-  if len(ids) > 0 {
-    sqlStr := "INSERT INTO following(twitter_id) VALUES "
-    vals := []interface{}{}
+	if len(ids) > 0 {
+		sqlStr := "INSERT INTO following(twitter_id) VALUES "
+		vals := []interface{}{}
 
-    for _, id := range ids {
-      sqlStr += "(?),"
-      vals = append(vals, id)
-    }
+		for _, id := range ids {
+			sqlStr += "(?),"
+			vals = append(vals, id)
+		}
 
-    sqlStr = sqlStr[0:len(sqlStr)-1]
-    log.Printf("sqlStr = %s", sqlStr)
+		sqlStr = sqlStr[0 : len(sqlStr)-1]
+		log.Printf("sqlStr = %s", sqlStr)
 
-    statement, err := d.db.Prepare(sqlStr)
-    if err != nil {
-      return err
-    }
+		statement, err := d.db.Prepare(sqlStr)
+		if err != nil {
+			return err
+		}
 
-    _, err = statement.Exec(vals...)
-    if err != nil {
-      return err
-    }
-  }
+		_, err = statement.Exec(vals...)
+		if err != nil {
+			return err
+		}
+	}
 
-  return nil
+	return nil
 }
 
 func (d DatabaseConnection) insertTempFollowings(ids []int64) error {
-  if len(ids) > 0 {
-    sqlStr := "INSERT INTO temp_following(twitter_id) VALUES "
-    vals := []interface{}{}
+	if len(ids) > 0 {
+		sqlStr := "INSERT INTO temp_following(twitter_id) VALUES "
+		vals := []interface{}{}
 
-    for _, id := range ids {
-      sqlStr += "(?),"
-      vals = append(vals, id)
-    }
+		for _, id := range ids {
+			sqlStr += "(?),"
+			vals = append(vals, id)
+		}
 
-    sqlStr = sqlStr[0:len(sqlStr)-1]
-    log.Printf("sqlStr = %s", sqlStr)
+		sqlStr = sqlStr[0 : len(sqlStr)-1]
+		log.Printf("sqlStr = %s", sqlStr)
 
-    statement, err := d.db.Prepare(sqlStr)
-    if err != nil {
-      return err
-    }
+		statement, err := d.db.Prepare(sqlStr)
+		if err != nil {
+			return err
+		}
 
-    _, err = statement.Exec(vals...)
-    if err != nil {
-      return err
-    }
-  }
-  return nil
+		_, err = statement.Exec(vals...)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (d DatabaseConnection) insertFollowers(ids []int64) error {
-  sqlStr := "INSERT INTO follower(twitter_id) VALUES "
-  vals := []interface{}{}
+	sqlStr := "INSERT INTO follower(twitter_id) VALUES "
+	vals := []interface{}{}
 
-  for _, id := range ids {
-    sqlStr += "(?),"
-    vals = append(vals, id)
-  }
+	for _, id := range ids {
+		sqlStr += "(?),"
+		vals = append(vals, id)
+	}
 
-  sqlStr = sqlStr[0:len(sqlStr)-1]
-  log.Printf("sqlStr = %s", sqlStr)
+	sqlStr = sqlStr[0 : len(sqlStr)-1]
+	log.Printf("sqlStr = %s", sqlStr)
 
-  statement, err := d.db.Prepare(sqlStr)
-  if err != nil {
-    return err
-  }
+	statement, err := d.db.Prepare(sqlStr)
+	if err != nil {
+		return err
+	}
 
-  _, err = statement.Exec(vals...)
-  if err != nil {
-    return err
-  }
+	_, err = statement.Exec(vals...)
+	if err != nil {
+		return err
+	}
 
-  return nil
+	return nil
 }
 
-
-
 func (d DatabaseConnection) InsertFollower(follower *Follower) error {
-  follower.TwitterId = 1234
-  log.Printf("follower.TwitterId = %d", follower.TwitterId)
+	follower.TwitterId = 1234
+	log.Printf("follower.TwitterId = %d", follower.TwitterId)
 
-  return d.dbMap.Insert(follower)
+	return d.dbMap.Insert(follower)
 }
 
 func initDbMap(d *DatabaseConnection) error {
-  migrationDir := "../db/migrations"
-  mysqldbmap := &gorp.DbMap{
-    Db: d.db,
-    Dialect: gorp.MySQLDialect{"InnoDB", "UTF8"},
-  }
+	migrationDir := "db/migrations"
+	mysqldbmap := &gorp.DbMap{
+		Db:      d.db,
+		Dialect: gorp.MySQLDialect{"InnoDB", "UTF8"},
+	}
 
 	migrations := &migrate.FileMigrationSource{
 		Dir: migrationDir,
@@ -427,18 +426,17 @@ func initDbMap(d *DatabaseConnection) error {
 		log.Printf("Successfully ran %v migrations\n", n)
 	}
 
-  if err != nil {
+	if err != nil {
 		return err
 	}
 
-  d.dbMap = mysqldbmap
-  d.dbMap.AddTableWithName(Follower{}, "follower")
-  // .SetKeys(true, "TwitterId")
+	d.dbMap = mysqldbmap
+	d.dbMap.AddTableWithName(Follower{}, "follower")
+	// .SetKeys(true, "TwitterId")
 	d.dbMap.AddTableWithName(Following{}, "following")
 
-  return nil
+	return nil
 }
-
 
 func formattedUrl(url *url.URL) string {
 	return fmt.Sprintf(
@@ -449,34 +447,34 @@ func formattedUrl(url *url.URL) string {
 	)
 }
 
-func (d DatabaseConnection) Exec(strStatement string) (sql.Result, error){
-  statement, err := d.db.Prepare(strStatement)
-  if err != nil {
-    return nil, err
-  }
+func (d DatabaseConnection) Exec(strStatement string) (sql.Result, error) {
+	statement, err := d.db.Prepare(strStatement)
+	if err != nil {
+		return nil, err
+	}
 
-  result, err := statement.Exec()
-  if err != nil {
-    return nil, err
-  }
-  return result, nil
+	result, err := statement.Exec()
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func initConnection(uri string) (*sql.DB, error) {
 
-  url, err := url.Parse(uri)
+	url, err := url.Parse(uri)
 	if err != nil {
 		log.Fatalln("Error parsing DATABASE_URL", err)
 	}
 
-  databaseUrl := formattedUrl(url)
+	databaseUrl := formattedUrl(url)
 
-  db, err := sql.Open("mysql", databaseUrl)
-  if err != nil {
-    return nil, err
-  }
+	db, err := sql.Open("mysql", databaseUrl)
+	if err != nil {
+		return nil, err
+	}
 
-  return db, nil
+	return db, nil
 }
 
 // func isDatabaseInitialized() (bool, error) {
@@ -487,22 +485,26 @@ func initConnection(uri string) (*sql.DB, error) {
 // }
 
 func getURI() (string, error) {
-	envVar := os.Getenv("VCAP_SERVICES")
+	//	envVar := os.Getenv("VCAP_SERVICES")
 
-  if envVar == "" {
-    return "", errors.New("MySql Service not set in env path")
-  }
+	envVar := os.Getenv("DATABASE_URL")
+	if envVar == "" {
+		return "", errors.New("MySql Service not set in env path")
+	}
 
-  // var vcapServices map[string]interface{}
-  var vcapServices MySql
-  err := json.Unmarshal([]byte(envVar), &vcapServices)
-  if err != nil {
-    return "", errors.New("MySql Service cannot be found")
-  }
+	log.Printf("envVar = %s\n", envVar)
 
-  if len(vcapServices.Cleardb) == 0{
-    return "", errors.New("MySql Service cannot be found")
-  }
+	return envVar, nil
+	// var vcapServices map[string]interface{}
+	//	var vcapServices MySql
+	//	err := json.Unmarshal([]byte(envVar), &vcapServices)
+	//	if err != nil {
+	//		return "", errors.New("Error Parsing: MySql Service cannot be found")
+	//	}
 
-  return vcapServices.Cleardb[0]["credentials"]["uri"], nil
+	//	if len(vcapServices.Cleardb) == 0 {
+	//		return "", errors.New("Cannot found cleardb: MySql Service cannot be found")
+	//	}
+
+	//	return vcapServices.Cleardb[0]["credentials"]["uri"], nil
 }
