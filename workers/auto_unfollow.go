@@ -15,10 +15,10 @@ type AutoUnfollowWorker struct {
 }
 
 func (w AutoUnfollowWorker) Start() {
-
+  r := rand.New(rand.NewSource(time.Now().UnixNano()))
   for true {
     go w.unfollow()
-    time.Sleep(w.SleepTime)
+    time.Sleep(time.Duration(r.Intn(15) + 1) * w.SleepTime)
   }
 
 }
@@ -36,7 +36,7 @@ func (w AutoUnfollowWorker) unfollow() error{
     unfollowerId := unfollowIds[r.Intn(len(unfollowIds))]
 
     log.Printf("Unfollowing %v", unfollowerId)
-    err = w.Twitter.Unfollow()
+    err = w.Twitter.Unfollow(unfollowerId)
     if err != nil {
       log.Printf("Error while unfollowing: %v", err)
       return err
@@ -49,11 +49,11 @@ func (w AutoUnfollowWorker) unfollow() error{
       log.Printf("Error while unfollowing: %v", err)
       return err
     }
+
+    log.Printf("Finished unfollowing %v", unfollowerId)
   } else {
     log.Printf("Not enough people to unfollow\n")
   }
-
-  log.Printf("Finished unfollowing %v", unfollowIds)
 
   return nil
 }
