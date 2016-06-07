@@ -31,17 +31,20 @@ func (w AutoUnfollowWorker) unfollow() error{
     return err
   }
 
-  log.Printf("Unfollowing %v", unfollowIds)
-
   if len(unfollowIds) > 50 {
-    r := rand.New(rand.NewSource(time.Now().UnixNano()))  
-    err = w.Twitter.Unfollow(unfollowIds[r.Intn(len(unfollowIds))])
+    r := rand.New(rand.NewSource(time.Now().UnixNano()))
+    unfollowerId := unfollowIds[r.Intn(len(unfollowIds))]
+
+    log.Printf("Unfollowing %v", unfollowerId)
+    err = w.Twitter.Unfollow()
     if err != nil {
       log.Printf("Error while unfollowing: %v", err)
       return err
     }
 
-    err = w.Database.Unfollow(unfollowIds)
+    t := make([]int64, 1)
+    t[0] = unfollowerId
+    err = w.Database.Unfollow(t)
     if err != nil {
       log.Printf("Error while unfollowing: %v", err)
       return err
