@@ -37,6 +37,11 @@ func (w AutoFollowWorker) findCandidate(channel chan int64) {
     if len(followerIds) > 0 {
       index := r.Intn(len(followerIds))
       candidateIds, err := w.Twitter.GetFollowerIds(followerIds[index])
+      if err != nil {
+        log.Printf("Error while getting follower id: %v", err)
+        time.Sleep(w.SleepTime)
+      }
+
       for i := 0; i < 10 && i < len(candidateIds); i++ {
         index := r.Intn(len(candidateIds))
         candidateId := candidateIds[index]
