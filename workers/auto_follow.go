@@ -18,11 +18,12 @@ type AutoFollowWorker struct {
 func (w AutoFollowWorker) Start() {
   channel := make(chan int64)
   go w.findCandidate(channel)
-  r := rand.New(rand.NewSource(time.Now().UnixNano()))
+  // r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
   for true {
     go w.follow(channel)
-    time.Sleep(time.Duration(r.Intn(1) + 1) * w.SleepTime)
+    // time.Sleep(time.Duration(r.Intn(1) + 1) * w.SleepTime)
+    time.Sleep(w.SleepTime)
   }
 }
 

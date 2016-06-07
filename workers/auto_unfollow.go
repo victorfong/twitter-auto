@@ -18,7 +18,8 @@ func (w AutoUnfollowWorker) Start() {
   r := rand.New(rand.NewSource(time.Now().UnixNano()))
   for true {
     go w.unfollow()
-    time.Sleep(time.Duration(r.Intn(15) + 1) * w.SleepTime)
+    time.Sleep(time.Duration(r.Intn(80) + 1) * time.Second + w.SleepTime)
+    // time.Sleep(w.SleepTime)
   }
 
 }
@@ -33,7 +34,7 @@ func (w AutoUnfollowWorker) unfollow() error{
 
   if len(unfollowIds) > 50 {
     r := rand.New(rand.NewSource(time.Now().UnixNano()))
-    unfollowerId := unfollowIds[r.Intn(len(unfollowIds))]
+    unfollowerId := unfollowIds[r.Intn(len(unfollowIds) - 5) + 5]
 
     log.Printf("Unfollowing %v", unfollowerId)
     err = w.Twitter.Unfollow(unfollowerId)
