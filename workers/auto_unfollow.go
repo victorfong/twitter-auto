@@ -6,6 +6,8 @@ import (
   "time"
   "log"
   "math/rand"
+  "regexp"
+  "strconv"
 )
 
 type AutoUnfollowWorker struct {
@@ -24,6 +26,11 @@ func (w AutoUnfollowWorker) Start() {
 
 }
 
+func IsEnglishName(name string) bool{
+  match, _ := regexp.MatchString("[A-Za-z\\s\\'\\,\\-]{"+strconv.Itoa(len(name))+"}", name)
+  return match
+}
+
 func (w AutoUnfollowWorker) unfollow() error{
 
   unfollowIds, err := w.Database.GetUnfollowList()
@@ -33,8 +40,21 @@ func (w AutoUnfollowWorker) unfollow() error{
   }
 
   if len(unfollowIds) > 50 {
-    r := rand.New(rand.NewSource(time.Now().UnixNano()))
-    unfollowerId := unfollowIds[r.Intn(len(unfollowIds) - 5) + 5]
+    var unfollowerId int64
+    for i := 0; i < 20; i++ {
+      r := rand.New(rand.NewSource(time.Now().UnixNano()))
+      unfollowerId = unfollowIds[r.Intn(len(unfollowIds) - 5) + 5]
+      userShow, err := w.Twitter.GetUsersShowById(unfollowerId)
+      if err != nil{
+        log.Printf("Received error while fetching user show for %d. Skipping...", unfollowerId)
+      } else {
+        if(!IsEnglishName(userShow.Name)){
+          log.Printf("Candidate name %s appears not to be English", userShow.Name)
+          log.Printf("Attempting to unfollow %d %s.", unfollowerId, userShow.Name)
+          break;
+        }
+      }
+    }
 
     log.Printf("Unfollowing %v", unfollowerId)
     err = w.Twitter.Unfollow(unfollowerId)

@@ -54,8 +54,16 @@ func (w AutoFollowWorker) findCandidate(channel chan int64) {
           if(alreadyFollowed){
               log.Printf("Already followed candidate %d", candidateId)
           } else {
-            log.Printf("Adding candidate id %d to queue", candidateId)
-            channel <- candidateId
+            userShow, err := w.Twitter.GetUsersShowById(candidateId)
+            if err != nil {
+              log.Printf("Received err while getting user show for candidate %d. Skipping...", candidateId)
+            } else {
+              if(IsEnglishName(userShow.Name)){
+                log.Printf("Candidate name %s appears to be English", userShow.Name)
+                log.Printf("Adding candidate id %d %s to queue", candidateId, userShow.Name)
+                channel <- candidateId
+              }
+            }
           }
         } else {
           log.Printf("Error while finding candidate: %v", err)

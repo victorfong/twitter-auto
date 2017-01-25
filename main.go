@@ -34,7 +34,7 @@ func startWorkers() {
 	go dbSyncWorker.Start()
 
 	unfollowWorker := workers.AutoUnfollowWorker{
-		SleepTime: time.Minute,
+		SleepTime: time.Minute * 5,
 		Twitter: twitter,
 		Database: database,
 	}
@@ -42,7 +42,7 @@ func startWorkers() {
 	go unfollowWorker.Start()
 
 	followWorker := workers.AutoFollowWorker{
-		SleepTime: time.Minute,
+		SleepTime: time.Minute * 5,
 		Twitter:   twitter,
 		Database:  database,
 	}

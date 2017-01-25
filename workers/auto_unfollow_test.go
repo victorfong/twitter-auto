@@ -8,7 +8,23 @@ import (
 )
 
 var _ = Describe("Unit", func(){
-  Context("When there are new people who need to be unfollowed", func(){
+  Context("When name is English", func(){
+    It("returns true", func(){
+      Expect(IsEnglishName("Something Something")).To(BeTrue())
+      Expect(IsEnglishName("Jo-Jo O'Connor")).To(BeTrue())
+    })
+  })
+
+  Context("When name is not English", func(){
+    It("returns false", func(){
+      Expect(IsEnglishName("維基百科")).To(BeFalse())
+      Expect(IsEnglishName("維基T百科")).To(BeFalse())
+      Expect(IsEnglishName("єℓєgαηт❣️ a")).To(BeFalse())
+    })
+  })
+
+
+  XContext("When there are new people who need to be unfollowed", func(){
     It("unfollow them one at a time", func(){
       ctrl := gomock.NewController(GinkgoT())
 	    defer ctrl.Finish()

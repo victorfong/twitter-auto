@@ -15,6 +15,8 @@ type Twitter interface {
   GetSelfFollowerIds() ([]int64, error)
   GetFollowerIds(userId int64) ([]int64, error)
 
+  GetUsersShowById(userId int64) (anaconda.User, error)
+
   Unfollow(userId int64) error
   Follow(userId int64) error
 }
@@ -79,6 +81,19 @@ func (t TwitterConnection) GetSelfFollowerIds() ([]int64, error) {
     return nil, err
   }
   return t.GetFollowerIds(userId)
+}
+
+func (t TwitterConnection) GetUsersShowById(userId int64) (anaconda.User, error){
+  log.Printf("Getting user show %d", userId)
+  v := url.Values{}
+  result, err := t.api.GetUsersShowById(userId, v)
+  log.Printf("Finished Getting user show %d", userId)
+  if err != nil {
+    log.Printf("Received Error while getting user show");
+  } else {
+    log.Printf("User name is %s", result.Name)
+  }
+  return result, err
 }
 
 func (t TwitterConnection) GetFollowerIds(userId int64) ([]int64, error) {
